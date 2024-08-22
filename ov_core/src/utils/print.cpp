@@ -96,7 +96,8 @@ void Printer::debugPrint(PrintLevel level, const char location[], const char lin
     printf(":%s ", line);
   }
 
-  // Print the rest of the args
+  // Print the rest of the args  
+  // ???
   va_list args;
   va_start(args, format);
   vprintf(format, args);

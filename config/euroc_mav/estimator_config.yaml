@@ -25,7 +25,7 @@ feat_rep_msckf: "GLOBAL_3D"
 feat_rep_slam: "ANCHORED_MSCKF_INVERSE_DEPTH"
 feat_rep_aruco: "ANCHORED_MSCKF_INVERSE_DEPTH"
 
-# zero velocity update parameters we can use
+# zero velocity update parameters we can use (ZUPT in short)
 # we support either IMU-based or disparity detection.
 try_zupt: false
 zupt_chi2_multipler: 0 # set to 0 for only disp-based

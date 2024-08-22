@@ -156,6 +156,7 @@ State::State(StateOptions &options) {
           std::pow(0.015, 2) * Eigen::MatrixXd::Identity(3, 3);
     }
   }
+  // fx, fy, cx, cy 만 고려하는 건가?
   if (_options.do_calib_camera_intrinsics) {
     for (int i = 0; i < _options.num_cameras; i++) {
       _Cov.block(_cam_intrinsics.at(i)->id(), _cam_intrinsics.at(i)->id(), 4, 4) = std::pow(1.0, 2) * Eigen::MatrixXd::Identity(4, 4);

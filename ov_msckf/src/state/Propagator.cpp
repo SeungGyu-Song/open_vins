@@ -137,14 +137,15 @@ void Propagator::propagate_and_clone(std::shared_ptr<State> state, double timest
   StateHelper::augment_clone(state, last_w);
 }
 
+//timestamp : imu_msg timestamp
 bool Propagator::fast_state_propagate(std::shared_ptr<State> state, double timestamp, Eigen::Matrix<double, 13, 1> &state_plus,
-                                      Eigen::Matrix<double, 12, 12> &covariance) {
+                                      Eigen::Matrix<double, 12, 12> &covariance) { 
 
   // First we will store the current calibration / estimates of the state
   if (!cache_imu_valid) {
     cache_state_time = state->_timestamp;
     cache_state_est = state->_imu->value();
-    cache_state_covariance = StateHelper::get_marginal_covariance(state, {state->_imu});
+    cache_state_covariance = StateHelper::get_marginal_covariance(state, {state->_imu}); // State에서 imu 해당하는 Covariance만 복사해옴.
     cache_t_off = state->_calib_dt_CAMtoIMU->value()(0);
     cache_imu_valid = true;
   }
@@ -181,7 +182,7 @@ bool Propagator::fast_state_propagate(std::shared_ptr<State> state, double times
     double dt = data_plus.timestamp - data_minus.timestamp;
 
     // Corrected imu acc measurements with our current biases
-    Eigen::Vector3d a_hat1 = R_ACCtoIMU * Da * (data_minus.am - bias_a);
+    Eigen::Vector3d a_hat1 = R_ACCtoIMU * Da * (data_minus.am - bias_a); // equation 4 in the calibration paper.
     Eigen::Vector3d a_hat2 = R_ACCtoIMU * Da * (data_plus.am - bias_a);
     Eigen::Vector3d a_hat = 0.5 * (a_hat1 + a_hat2);
 
@@ -198,6 +199,8 @@ bool Propagator::fast_state_propagate(std::shared_ptr<State> state, double times
     // State transition and noise matrix
     // TODO: should probably track the correlations with the IMU intrinsics if we are calibrating
     // TODO: currently this just does a quick discrete prediction using only the previous marg IMU uncertainty
+
+    // Discrete time Error state Propagation
     Eigen::Matrix<double, 15, 15> F = Eigen::Matrix<double, 15, 15>::Zero();
     F.block(0, 0, 3, 3) = exp_so3(-w_hat * dt);
     F.block(0, 9, 3, 3).noalias() = -exp_so3(-w_hat * dt) * Jr_so3(-w_hat * dt) * dt;
@@ -227,7 +230,7 @@ bool Propagator::fast_state_propagate(std::shared_ptr<State> state, double times
     Qc.block(6, 6, 3, 3) = _noises.sigma_wb_2 * dt * Eigen::Matrix3d::Identity();
     Qc.block(9, 9, 3, 3) = _noises.sigma_ab_2 * dt * Eigen::Matrix3d::Identity();
     Qd = G * Qc * G.transpose();
-    Qd = 0.5 * (Qd + Qd.transpose());
+    Qd = 0.5 * (Qd + Qd.transpose()); // ?
     cache_state_covariance = F * cache_state_covariance * F.transpose() + Qd;
 
     // Propagate the mean forward
@@ -256,6 +259,8 @@ bool Propagator::fast_state_propagate(std::shared_ptr<State> state, double times
   // Do a covariance propagation for our velocity (needs to be in local frame)
   // TODO: more properly do the covariance of the angular velocity here...
   // TODO: it should be dependent on the state bias, thus correlated with the pose..
+
+  // dㅕ기 아래는 뭐지?
   covariance.setZero();
   Eigen::Matrix<double, 15, 15> Phi = Eigen::Matrix<double, 15, 15>::Identity();
   Phi.block(6, 6, 3, 3) = quat_2_Rot(q_Gtoi);

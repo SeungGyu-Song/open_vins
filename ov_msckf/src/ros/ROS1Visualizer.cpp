@@ -102,7 +102,7 @@ ROS1Visualizer::ROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_
 
     // files we will open
     std::string filepath_est, filepath_std, filepath_gt;
-    nh->param<std::string>("filepath_est", filepath_est, "state_estimate.txt");
+    nh->param<std::string>("filepath_est", filepath_est, "state_estimate.txt"); // 얘네 yaml파일 안에 있는 option들인데 왜 param으로 받아오지?[]
     nh->param<std::string>("filepath_std", filepath_std, "state_deviation.txt");
     nh->param<std::string>("filepath_gt", filepath_gt, "state_groundtruth.txt");
 
@@ -138,7 +138,7 @@ ROS1Visualizer::ROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_
   // Start thread for the image publishing
   if (_app->get_params().use_multi_threading_pubs) {
     std::thread thread([&] {
-      ros::Rate loop_rate(20);
+      ros::Rate loop_rate(20); // 20hz
       while (ros::ok()) {
         publish_images();
         loop_rate.sleep();
@@ -167,7 +167,7 @@ void ROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> pars
     std::string cam_topic0, cam_topic1;
     _nh->param<std::string>("topic_camera" + std::to_string(0), cam_topic0, "/cam" + std::to_string(0) + "/image_raw");
     _nh->param<std::string>("topic_camera" + std::to_string(1), cam_topic1, "/cam" + std::to_string(1) + "/image_raw");
-    parser->parse_external("relative_config_imucam", "cam" + std::to_string(0), "rostopic", cam_topic0);
+    parser->parse_external("relative_config_imucam", "cam" + std::to_string(0), "rostopic", cam_topic0); // 이게 어떻게 작동하는 건지 잘 모르겠당 
     parser->parse_external("relative_config_imucam", "cam" + std::to_string(1), "rostopic", cam_topic1);
     // Create sync filter (they have unique pointers internally, so we have to use move logic here...)
     auto image_sub0 = std::make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*_nh, cam_topic0, 1);
@@ -252,7 +252,7 @@ void ROS1Visualizer::visualize_odometry(double timestamp) {
   std::shared_ptr<State> state = _app->get_state();
   Eigen::Matrix<double, 13, 1> state_plus = Eigen::Matrix<double, 13, 1>::Zero();
   Eigen::Matrix<double, 12, 12> cov_plus = Eigen::Matrix<double, 12, 12>::Zero();
-  if (!_app->get_propagator()->fast_state_propagate(state, timestamp, state_plus, cov_plus))
+  if (!_app->get_propagator()->fast_state_propagate(state, timestamp, state_plus, cov_plus)) // 일단 propagation 했다 쳐.
     return;
 
   //  // Get the simulated groundtruth so we can evaulate the error in respect to it
@@ -303,11 +303,12 @@ void ROS1Visualizer::visualize_odometry(double timestamp) {
     odomIinM.twist.twist.linear.x = state_plus(7);   // vel in local frame
     odomIinM.twist.twist.linear.y = state_plus(8);   // vel in local frame
     odomIinM.twist.twist.linear.z = state_plus(9);   // vel in local frame
-    odomIinM.twist.twist.angular.x = state_plus(10); // we do not estimate this...
+    odomIinM.twist.twist.angular.x = state_plus(10); // we do not estimate this... // 그러게 왜 angular velocity는 안 하지?
     odomIinM.twist.twist.angular.y = state_plus(11); // we do not estimate this...
     odomIinM.twist.twist.angular.z = state_plus(12); // we do not estimate this...
 
     // Finally set the covariance in the message (in the order position then orientation as per ros convention)
+    // 이거 식의 근거가 어떻게 되지?[ ] 
     Eigen::Matrix<double, 12, 12> Phi = Eigen::Matrix<double, 12, 12>::Zero();
     Phi.block(0, 3, 3, 3).setIdentity();
     Phi.block(3, 0, 3, 3).setIdentity();
@@ -323,6 +324,7 @@ void ROS1Visualizer::visualize_odometry(double timestamp) {
         odomIinM.twist.covariance[6 * r + c] = cov_plus(r + 6, c + 6);
       }
     }
+    
     pub_odomimu.publish(odomIinM);
   }
 
@@ -445,7 +447,7 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
 
   // send it to our VIO system
   _app->feed_measurement_imu(message);
-  visualize_odometry(message.timestamp);
+  visualize_odometry(message.timestamp); // 여기서 propagation 진행
 
   // If the processing queue is currently active / running just return so we can keep getting measurements
   // Otherwise create a second thread to do our update in an async manor
@@ -460,14 +462,14 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
     // Count how many unique image streams
     std::map<int, bool> unique_cam_ids;
     for (const auto &cam_msg : camera_queue) {
-      unique_cam_ids[cam_msg.sensor_ids.at(0)] = true;
+      unique_cam_ids[cam_msg.sensor_ids.at(0)] = true; // 왼쪽이든 오른쪽이든 하나 그냥 한 쌍의 image라고 생각하면 될 듯.
     }
 
     // If we do not have enough unique cameras then we need to wait
     // We should wait till we have one of each camera to ensure we propagate in the correct order
     auto params = _app->get_params();
     size_t num_unique_cameras = (params.state_options.num_cameras == 2) ? 1 : params.state_options.num_cameras;
-    if (unique_cam_ids.size() == num_unique_cameras) {
+    if (unique_cam_ids.size() == num_unique_cameras) { // 이게 이미지가 하나라도 들어왔으면 update를 해주는 식 같은데
 
       // Loop through our queue and see if we are able to process any of our camera measurements
       // We are able to process if we have at least one IMU measurement greater than the camera time

@@ -115,6 +115,8 @@ public:
     return Tg;
   }
 
+  
+
   /**
    * @brief Calculates the error state size for imu intrinsics.
    *
@@ -126,7 +128,7 @@ public:
   int imu_intrinsic_size() const {
     int sz = 0;
     if (_options.do_calib_imu_intrinsics) {
-      sz += 15;
+      sz += 15; // D_w, D_a, R^I_a
       if (_options.do_calib_imu_g_sensitivity) {
         sz += 9;
       }
@@ -182,7 +184,7 @@ public:
 private:
   // Define that the state helper is a friend class of this class
   // This will allow it to access the below functions which should normally not be called
-  // This prevents a developer from thinking that the "insert clone" will actually correctly add it to the covariance
+  // This prevents a developer from thinking that the "insert clone" will actually correctly add it to the covariance  // ?이게 뭔 소리야.
   friend class StateHelper;
 
   /// Covariance of all active variables

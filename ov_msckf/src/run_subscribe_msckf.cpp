@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
   PRINT_DEBUG("done...spinning to ros\n");
 #if ROS_AVAILABLE == 1
   // ros::spin();
-  ros::AsyncSpinner spinner(0);
+  ros::AsyncSpinner spinner(0); // 왜 AsyncSpinner로 받지? 
   spinner.start();
   ros::waitForShutdown();
 #elif ROS_AVAILABLE == 2

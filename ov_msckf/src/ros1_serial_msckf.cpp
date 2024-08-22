@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
 
   // Create our VIO system
   VioManagerOptions params;
+  // 일단 그냥 parsing 됐다 치고 넘어가자. 나중에 다시 보기 []
   params.print_and_load(parser);
   // params.num_opencv_threads = 0; // uncomment if you want repeatability
   // params.use_multi_threading_pubs = 0; // uncomment if you want repeatability

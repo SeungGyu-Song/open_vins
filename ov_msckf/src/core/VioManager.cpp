@@ -320,6 +320,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
   do_feature_propagate_update(message);
 }
 
+// This is run in the inertial callback.
 void VioManager::do_feature_propagate_update(const ov_core::CameraData &message) {
 
   //===================================================================================

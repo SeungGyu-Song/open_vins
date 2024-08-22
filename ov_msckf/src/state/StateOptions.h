@@ -130,7 +130,7 @@ struct StateOptions {
       std::string rep1 = ov_type::LandmarkRepresentation::as_string(feat_rep_msckf);
       parser->parse_config("feat_rep_msckf", rep1);
       feat_rep_msckf = ov_type::LandmarkRepresentation::from_string(rep1);
-      std::string rep2 = ov_type::LandmarkRepresentation::as_string(feat_rep_slam);
+      std::string rep2 = ov_type::LandmarkRepresentation::as_string(feat_rep_slam); // 굳이 이런 식으로 초기화를 해주어야하나? 그냥 바로 param으로 받아와도 되지 않나?
       parser->parse_config("feat_rep_slam", rep2);
       feat_rep_slam = ov_type::LandmarkRepresentation::from_string(rep2);
       std::string rep3 = ov_type::LandmarkRepresentation::as_string(feat_rep_aruco);
@@ -139,7 +139,7 @@ struct StateOptions {
 
       // IMU model
       std::string imu_model_str = "kalibr";
-      parser->parse_external("relative_config_imu", "imu0", "model", imu_model_str);
+      parser->parse_external("relative_config_imu", "imu0", "model", imu_model_str); // 이거 함수가 어떻게 되는 건지 잘 모르겠다. 뭐 암튼 imu type을 받아옴.
       if (imu_model_str == "kalibr" || imu_model_str == "calibrated") {
         imu_model = ImuModel::KALIBR;
       } else if (imu_model_str == "rpng") {

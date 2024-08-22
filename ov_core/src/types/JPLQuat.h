@@ -120,7 +120,7 @@ public:
     dq << .5 * dx, 1.0;
     dq = ov_core::quatnorm(dq);
 
-    // Update estimate and recompute R
+    // Update estimate and recompute R // left multiply
     set_value(ov_core::quat_multiply(dq, _value));
   }
 
@@ -136,6 +136,7 @@ public:
    */
   void set_fej(const Eigen::MatrixXd &new_value) override { set_fej_internal(new_value); }
 
+  // Deep copy
   std::shared_ptr<Type> clone() override {
     auto Clone = std::shared_ptr<JPLQuat>(new JPLQuat());
     Clone->set_value(value());

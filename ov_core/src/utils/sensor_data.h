@@ -69,7 +69,7 @@ struct CameraData {
   /// Sort function to allow for using of STL containers
   bool operator<(const CameraData &other) const {
     if (timestamp == other.timestamp) {
-      int id = *std::min_element(sensor_ids.begin(), sensor_ids.end());
+      int id = *std::min_element(sensor_ids.begin(), sensor_ids.end()); // 원래 반환 값인 interator에 *가 붙었으니까 값을 return.
       int id_other = *std::min_element(other.sensor_ids.begin(), other.sensor_ids.end());
       return id < id_other;
     } else {
