@@ -49,7 +49,7 @@ public:
    * @param fast_threshold FAST detection threshold
    * @param gridx size of grid in the x-direction / u-direction
    * @param gridy size of grid in the y-direction / v-direction
-   * @param minpxdist features need to be at least this number pixels away from each other
+   * @param minpxdist features need to be at least this number pixels away from each other / default is 10
    */
   explicit TrackKLT(std::unordered_map<size_t, std::shared_ptr<CamBase>> cameras, int numfeats, int numaruco, bool stereo,
                     HistogramMethod histmethod, int fast_threshold, int gridx, int gridy, int minpxdist)

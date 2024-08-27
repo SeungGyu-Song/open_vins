@@ -156,10 +156,10 @@ public:
    */
   template <class T>
   void parse_external(const std::string &external_node_name, const std::string &sensor_name, const std::string &node_name, T &node_result,
-                      bool required = true) {
+                      bool required = true) { // "relative_config_imu" + "imu0"
 
 #if ROS_AVAILABLE == 1
-    std::string rosnode = sensor_name + "_" + node_name;
+    std::string rosnode = sensor_name + "_" + node_name; 
     if (nh != nullptr && nh->getParam(rosnode, node_result)) {
       PRINT_INFO(GREEN "overriding node " BOLDGREEN "%s" RESET GREEN " with value from ROS!\n" RESET, rosnode.c_str());
       nh->param<T>(rosnode, node_result);

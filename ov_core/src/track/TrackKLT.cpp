@@ -44,7 +44,7 @@ void TrackKLT::feed_new_camera(const CameraData &message) {
 
   // Preprocessing steps that we do not parallelize
   // NOTE: DO NOT PARALLELIZE THESE!
-  // NOTE: These seem to be much slower if you parallelize them...
+  // NOTE: These seem to be much slower if you parallelize them... // why??
   rT1 = boost::posix_time::microsec_clock::local_time();
   size_t num_images = message.images.size();
   for (size_t msg_id = 0; msg_id < num_images; msg_id++) {
@@ -56,14 +56,14 @@ void TrackKLT::feed_new_camera(const CameraData &message) {
     // Histogram equalize
     cv::Mat img;
     if (histogram_method == HistogramMethod::HISTOGRAM) {
-      cv::equalizeHist(message.images.at(msg_id), img);
-    } else if (histogram_method == HistogramMethod::CLAHE) {
+      cv::equalizeHist(message.images.at(msg_id), img); // histogram equalization => clearer image with obvious boundaries
+    } else if (histogram_method == HistogramMethod::CLAHE) { // Contrast Limited Adaptive Histogram Equalization
       double eq_clip_limit = 10.0;
       cv::Size eq_win_size = cv::Size(8, 8);
       cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(eq_clip_limit, eq_win_size);
       clahe->apply(message.images.at(msg_id), img);
     } else {
-      img = message.images.at(msg_id);
+      img = message.images.at(msg_id); //None
     }
 
     // Extract image pyramid
@@ -81,7 +81,7 @@ void TrackKLT::feed_new_camera(const CameraData &message) {
     feed_monocular(message, 0);
   } else if (num_images == 2 && use_stereo) {
     feed_stereo(message, 0, 1);
-  } else if (!use_stereo) {
+  } else if (!use_stereo) { // 굳이 왜 Range를 opencv로 하는 거지? 그냥 size_t나 일반 int로 해도 되는 거 아닌가? ( )
     parallel_for_(cv::Range(0, (int)num_images), LambdaBody([&](const cv::Range &range) {
                     for (int i = range.start; i < range.end; i++) {
                       feed_monocular(message, i);
@@ -163,9 +163,12 @@ void TrackKLT::feed_monocular(const CameraData &message, size_t msg_id) {
       continue;
     // Check if it is in the mask
     // NOTE: mask has max value of 255 (white) if it should be
+    // what are masks in an image message for?
     if ((int)message.masks.at(msg_id).at<uint8_t>((int)pts_left_new.at(i).pt.y, (int)pts_left_new.at(i).pt.x) > 127)
       continue;
     // If it is a good track, and also tracked from left to right
+
+    
     if (mask_ll[i]) {
       good_left.push_back(pts_left_new[i]);
       good_ids_left.push_back(ids_left_old[i]);
@@ -204,7 +207,7 @@ void TrackKLT::feed_stereo(const CameraData &message, size_t msg_id_left, size_t
   // Lock this data feed for this camera
   size_t cam_id_left = message.sensor_ids.at(msg_id_left);
   size_t cam_id_right = message.sensor_ids.at(msg_id_right);
-  std::lock_guard<std::mutex> lck1(mtx_feeds.at(cam_id_left));
+  std::lock_guard<std::mutex> lck1(mtx_feeds.at(cam_id_left)); //lock을 왜 2개나 해야하지?
   std::lock_guard<std::mutex> lck2(mtx_feeds.at(cam_id_right));
 
   // Get our image objects for this image
@@ -354,6 +357,7 @@ void TrackKLT::feed_stereo(const CameraData &message, size_t msg_id_left, size_t
   }
 
   // Update our feature database, with theses new observations
+  // 왼, 오 각각에 대해서 update_feature해주는데 이 때  update는 그냥 feature를 업데이트 하는 거. Filter update랑은 다름.
   for (size_t i = 0; i < good_left.size(); i++) {
     cv::Point2f npt_l = camera_calib.at(cam_id_left)->undistort_cv(good_left.at(i).pt);
     database->update_feature(good_ids_left.at(i), message.timestamp, cam_id_left, good_left.at(i).pt.x, good_left.at(i).pt.y, npt_l.x,
@@ -466,8 +470,8 @@ void TrackKLT::perform_detection_monocular(const std::vector<cv::Mat> &img0pyr, 
   // First compute how many more features we need to extract from this image
   // If we don't need any features, just return
   double min_feat_percent = 0.50;
-  int num_featsneeded = num_features - (int)pts0.size();
-  if (num_featsneeded < std::min(20, (int)(min_feat_percent * num_features)))
+  int num_featsneeded = num_features - (int)pts0.size(); // 위에서 삭제된 feature 개수
+  if (num_featsneeded < std::min(20, (int)(min_feat_percent * num_features))) // 20개 이하거나 삭제된 feature 개수가 전체의 절반보다 적으면 return.
     return;
 
   // This is old extraction code that would extract from the whole image
@@ -526,7 +530,7 @@ void TrackKLT::perform_detection_monocular(const std::vector<cv::Mat> &img0pyr, 
     ids0.push_back(temp);
   }
 }
-
+ // input값들은 다 old image들이고  0이면 left, 1이면 right.
 void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, const std::vector<cv::Mat> &img1pyr, const cv::Mat &mask0,
                                         const cv::Mat &mask1, size_t cam_id_left, size_t cam_id_right, std::vector<cv::KeyPoint> &pts0,
                                         std::vector<cv::KeyPoint> &pts1, std::vector<size_t> &ids0, std::vector<size_t> &ids1) {
@@ -537,8 +541,8 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
   cv::Size size_close0((int)((float)img0pyr.at(0).cols / (float)min_px_dist),
                        (int)((float)img0pyr.at(0).rows / (float)min_px_dist)); // width x height
   cv::Mat grid_2d_close0 = cv::Mat::zeros(size_close0, CV_8UC1);
-  float size_x0 = (float)img0pyr.at(0).cols / (float)grid_x;
-  float size_y0 = (float)img0pyr.at(0).rows / (float)grid_y;
+  float size_x0 = (float)img0pyr.at(0).cols / (float)grid_x; // 640 / 5
+  float size_y0 = (float)img0pyr.at(0).rows / (float)grid_y; // 480 / 5 
   cv::Size size_grid0(grid_x, grid_y); // width x height
   cv::Mat grid_2d_grid0 = cv::Mat::zeros(size_grid0, CV_8UC1);
   cv::Mat mask0_updated = mask0.clone();
@@ -550,20 +554,23 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
     int x = (int)kpt.pt.x;
     int y = (int)kpt.pt.y;
     int edge = 10;
+    // 가장자리 point  없애기.
     if (x < edge || x >= img0pyr.at(0).cols - edge || y < edge || y >= img0pyr.at(0).rows - edge) {
       it0 = pts0.erase(it0);
       it1 = ids0.erase(it1);
       continue;
     }
+    
     // Calculate mask coordinates for close points
     int x_close = (int)(kpt.pt.x / (float)min_px_dist);
     int y_close = (int)(kpt.pt.y / (float)min_px_dist);
+    //이건 이미지 범위를 넘어가면 삭제
     if (x_close < 0 || x_close >= size_close0.width || y_close < 0 || y_close >= size_close0.height) {
       it0 = pts0.erase(it0);
       it1 = ids0.erase(it1);
       continue;
     }
-    // Calculate what grid cell this feature is in
+    // Calculate what grid cell this feature is in // cell : 전체 이미지를 5*5로 나눈 것
     int x_grid = std::floor(kpt.pt.x / size_x0);
     int y_grid = std::floor(kpt.pt.y / size_y0);
     if (x_grid < 0 || x_grid >= size_grid0.width || y_grid < 0 || y_grid >= size_grid0.height) {
@@ -571,7 +578,7 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
       it1 = ids0.erase(it1);
       continue;
     }
-    // Check if this keypoint is near another point
+    // Check if this keypoint is near another point // ?
     if (grid_2d_close0.at<uint8_t>(y_close, x_close) > 127) {
       it0 = pts0.erase(it0);
       it1 = ids0.erase(it1);
@@ -584,16 +591,16 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
       it1 = ids0.erase(it1);
       continue;
     }
-    // Else we are good, move forward to the next point
+    // Else we are good, move forward to the next point // ?
     grid_2d_close0.at<uint8_t>(y_close, x_close) = 255;
     if (grid_2d_grid0.at<uint8_t>(y_grid, x_grid) < 255) {
-      grid_2d_grid0.at<uint8_t>(y_grid, x_grid) += 1;
+      grid_2d_grid0.at<uint8_t>(y_grid, x_grid) += 1; //1을 더하는 게 뭐지? 이 그리드에 있다 이건가?
     }
     // Append this to the local mask of the image
     if (x - min_px_dist >= 0 && x + min_px_dist < img0pyr.at(0).cols && y - min_px_dist >= 0 && y + min_px_dist < img0pyr.at(0).rows) {
       cv::Point pt1(x - min_px_dist, y - min_px_dist);
       cv::Point pt2(x + min_px_dist, y + min_px_dist);
-      cv::rectangle(mask0_updated, pt1, pt2, cv::Scalar(255), -1);
+      cv::rectangle(mask0_updated, pt1, pt2, cv::Scalar(255), -1); // -1 for fill
     }
     it0++;
     it1++;
@@ -826,17 +833,18 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
   }
 }
 
+//img0pyr,kpts0은 last고, img1pyr, kpts1이 현재.
 void TrackKLT::perform_matching(const std::vector<cv::Mat> &img0pyr, const std::vector<cv::Mat> &img1pyr, std::vector<cv::KeyPoint> &kpts0,
                                 std::vector<cv::KeyPoint> &kpts1, size_t id0, size_t id1, std::vector<uchar> &mask_out) {
 
   // We must have equal vectors
-  assert(kpts0.size() == kpts1.size());
+  assert(kpts0.size() == kpts1.size()); //? 왜 같아야하지?
 
   // Return if we don't have any points
   if (kpts0.empty() || kpts1.empty())
     return;
 
-  // Convert keypoints into points (stupid opencv stuff)
+  // Convert keypoints into points (stupid opencv stuff) ㅋㅋ 그래도 cv의 Point2f로 변환하네. 일반 Eigen이 아니라.
   std::vector<cv::Point2f> pts0, pts1;
   for (size_t i = 0; i < kpts0.size(); i++) {
     pts0.push_back(kpts0.at(i).pt);
@@ -845,6 +853,7 @@ void TrackKLT::perform_matching(const std::vector<cv::Mat> &img0pyr, const std::
 
   // If we don't have enough points for ransac just return empty
   // We set the mask to be all zeros since all points failed RANSAC
+
   if (pts0.size() < 10) {
     for (size_t i = 0; i < pts0.size(); i++)
       mask_out.push_back((uchar)0);
@@ -858,7 +867,7 @@ void TrackKLT::perform_matching(const std::vector<cv::Mat> &img0pyr, const std::
   cv::calcOpticalFlowPyrLK(img0pyr, img1pyr, pts0, pts1, mask_klt, error, win_size, pyr_levels, term_crit, cv::OPTFLOW_USE_INITIAL_FLOW);
 
   // Normalize these points, so we can then do ransac
-  // We don't want to do ransac on distorted image uvs since the mapping is nonlinear
+  // We don't want to do ransac on distorted image uvs since the mapping is nonlinear // ransac은 nonlinear함수 이후에 적용하면 성능이 떨어지나?
   std::vector<cv::Point2f> pts0_n, pts1_n;
   for (size_t i = 0; i < pts0.size(); i++) {
     pts0_n.push_back(camera_calib.at(id0)->undistort_cv(pts0.at(i)));
@@ -873,6 +882,7 @@ void TrackKLT::perform_matching(const std::vector<cv::Mat> &img0pyr, const std::
   cv::findFundamentalMat(pts0_n, pts1_n, cv::FM_RANSAC, 2.0 / max_focallength, 0.999, mask_rsc);
 
   // Loop through and record only ones that are valid
+  // valid : optical flow에서도 살아남고, fundamental matrix에서도 살아남은 것, mask가 validity (1,0)을 담아놓은 거
   for (size_t i = 0; i < mask_klt.size(); i++) {
     auto mask = (uchar)((i < mask_klt.size() && mask_klt[i] && i < mask_rsc.size() && mask_rsc[i]) ? 1 : 0);
     mask_out.push_back(mask);

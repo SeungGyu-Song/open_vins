@@ -277,10 +277,10 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     message.masks.at(i) = mask_temp;
   }
 
-  // Perform our feature tracking!
+  // Perform our feature tracking! (detection & tracking.)
   trackFEATS->feed_new_camera(message);
 
-  // If the aruco tracker is available, the also pass to it
+  // If the aruco tracker is available, then also pass to it
   // NOTE: binocular tracking for aruco doesn't make sense as we by default have the ids
   // NOTE: thus we just call the stereo tracking if we are doing binocular!
   if (is_initialized_vio && trackARUCO != nullptr) {
@@ -290,7 +290,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
 
   // Check if we should do zero-velocity, if so update the state with it
   // Note that in the case that we only use in the beginning initialization phase
-  // If we have since moved, then we should never try to do a zero velocity update!
+  // If we have since moved, then we should never try to do a zero velocity update! // 아 그러면 ZUPT는 초기화 단계에서만 사용하는 것인가?? ( )
   if (is_initialized_vio && updaterZUPT != nullptr && (!params.zupt_only_at_beginning || !has_moved_since_zupt)) {
     // If the same state time, use the previous timestep decision
     if (state->_timestamp != message.timestamp) {

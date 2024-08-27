@@ -74,6 +74,7 @@ bool InertialInitializer::initialize(double &timestamp, Eigen::MatrixXd &covaria
                                      std::shared_ptr<ov_type::IMU> t_imu, bool wait_for_jerk) {
 
   // Get the newest and oldest timestamps we will try to initialize between!
+  // 한 개의 feature의 여러 observations에 대해
   double newest_cam_time = -1;
   for (auto const &feat : _db->get_internal_data()) {
     for (auto const &camtimepair : feat.second->timestamps) {
@@ -82,7 +83,7 @@ bool InertialInitializer::initialize(double &timestamp, Eigen::MatrixXd &covaria
       }
     }
   }
-  double oldest_time = newest_cam_time - params.init_window_time - 0.10;
+  double oldest_time = newest_cam_time - params.init_window_time - 0.10; // 0.10 is a buffer?? 정체가 뭐야
   if (newest_cam_time < 0 || oldest_time < 0) {
     return false;
   }
@@ -109,7 +110,7 @@ bool InertialInitializer::initialize(double &timestamp, Eigen::MatrixXd &covaria
     double avg_disp0, avg_disp1;
     double var_disp0, var_disp1;
     FeatureHelper::compute_disparity(_db, avg_disp0, var_disp0, num_features0, newest_time_allowed);
-    FeatureHelper::compute_disparity(_db, avg_disp1, var_disp1, num_features1, newest_cam_time, newest_time_allowed);
+    FeatureHelper::compute_disparity(_db, avg_disp1, var_disp1, num_features1, newest_cam_time, newest_time_allowed); // 이거 한 번 더 해줄 필요가 있나?
 
     // Return if we can't compute the disparity
     int feat_thresh = 15;

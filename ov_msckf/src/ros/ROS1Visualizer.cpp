@@ -155,7 +155,7 @@ void ROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> pars
 
   // Create imu subscriber (handle legacy ros param info)
   std::string topic_imu;
-  _nh->param<std::string>("topic_imu", topic_imu, "/imu0");
+  _nh->param<std::string>("topic_imu", topic_imu, "/imu0"); // 이거 근데 왜 param으로 받아오지?[] launch file에 업는데
   parser->parse_external("relative_config_imu", "imu0", "rostopic", topic_imu);
   sub_imu = _nh->subscribe(topic_imu, 1000, &ROS1Visualizer::callback_inertial, this);
   PRINT_INFO("subscribing to IMU: %s\n", topic_imu.c_str());
