@@ -608,7 +608,7 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
 
   // First compute how many more features we need to extract from this image
   double min_feat_percent = 0.50;
-  int num_featsneeded_0 = num_features - (int)pts0.size();
+  int num_featsneeded_0 = num_features - (int)pts0.size(); // 아마도 위에서 삭제된 faeture 수 //num_features가 뭐지? 
 
   // LEFT: if we need features we should extract them in the current frame
   // LEFT: we will also try to track them from this frame over to the right frame
@@ -663,7 +663,7 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
     std::vector<cv::KeyPoint> kpts1_new;
     std::vector<cv::Point2f> pts1_new;
     kpts1_new = kpts0_new;
-    pts1_new = pts0_new;
+    pts1_new = pts0_new; // 왼쪽 거를 오른쪽으로 복사하는 거니까 baseline이 크면 안 될 듯.
 
     // If we have points, do KLT tracking to get the valid projections into the right image
     if (!pts0_new.empty()) {
@@ -715,6 +715,9 @@ void TrackKLT::perform_detection_stereo(const std::vector<cv::Mat> &img0pyr, con
       }
     }
   }
+
+///////
+
 
   // RIGHT: Now summarise the number of tracks in the right image
   // RIGHT: We will try to extract some monocular features if we have the room

@@ -172,7 +172,7 @@ void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
     oldest_time = -1;
   }
   if (!is_initialized_vio) {
-    oldest_time = message.timestamp - params.init_options.init_window_time + state->_calib_dt_CAMtoIMU->value()(0) - 0.10;
+    oldest_time = message.timestamp - params.init_options.init_window_time + state->_calib_dt_CAMtoIMU->value()(0) - 0.10; // 0.10 is a buffer?? 정체가 뭐야
   }
   propagator->feed_imu(message, oldest_time);
 

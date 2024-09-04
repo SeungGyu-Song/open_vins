@@ -600,7 +600,7 @@ private:
     }
 
     // Check that we have the requested node
-    if (!node_found(config_external->root(), sensor_name)) {
+    if (!node_found(config_external->root(), sensor_name)) { // "imu0"
       PRINT_WARNING(YELLOW "the sensor %s of type [%s] was not found...\n" RESET, sensor_name.c_str(), typeid(node_result).name());
       all_params_found_successfully = false;
       return;

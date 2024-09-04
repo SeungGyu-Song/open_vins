@@ -60,7 +60,7 @@ void Propagator::propagate_and_clone(std::shared_ptr<State> state, double timest
   double t_off_new = state->_calib_dt_CAMtoIMU->value()(0);
 
   // First lets construct an IMU vector of measurements we need
-  double time0 = state->_timestamp + last_prop_time_offset;
+  double time0 = state->_timestamp + last_prop_time_offset; // 이건 imu랑 camera hz가 배수여야 의미가 있을 거 같은데.
   double time1 = timestamp + t_off_new;
   std::vector<ov_core::ImuData> prop_data;
   {
@@ -152,7 +152,7 @@ bool Propagator::fast_state_propagate(std::shared_ptr<State> state, double times
 
   // First lets construct an IMU vector of measurements we need
   double time0 = cache_state_time + cache_t_off;
-  double time1 = timestamp + cache_t_off;
+  double time1 = timestamp + cache_t_off; 
   std::vector<ov_core::ImuData> prop_data;
   {
     std::lock_guard<std::mutex> lck(imu_data_mtx);
@@ -464,6 +464,7 @@ void Propagator::predict_and_compute(std::shared_ptr<State> state, const ov_core
   // Construct our discrete noise covariance matrix
   // Note that we need to convert our continuous time noises to discrete
   // Equations (129) amd (130) of Trawny tech report
+  // 이거 fast_state_propagate하고 wb, ab 부분이 다른데 뭐가 맞는 걸까? report에서는 dt를 곱하는 게 맞는데. continuous 를 discrete하게 바꾸는 거면 dt를 나누는 게 맞는 거 같고.
   Eigen::Matrix<double, 12, 12> Qc = Eigen::Matrix<double, 12, 12>::Zero();
   Qc.block(0, 0, 3, 3) = std::pow(_noises.sigma_w, 2) / dt * Eigen::Matrix3d::Identity();
   Qc.block(3, 3, 3, 3) = std::pow(_noises.sigma_a, 2) / dt * Eigen::Matrix3d::Identity();
@@ -598,7 +599,7 @@ void Propagator::compute_Xi_sum(std::shared_ptr<State> state, double dt, const E
   double d_th = w_norm * dt;
   Eigen::Vector3d k_hat = Eigen::Vector3d::Zero();
   if (w_norm > 1e-12) {
-    k_hat = w_hat / w_norm;
+    k_hat = w_hat / w_norm; // normalize
   }
 
   // Compute useful identities used throughout
@@ -622,7 +623,7 @@ void Propagator::compute_Xi_sum(std::shared_ptr<State> state, double dt, const E
 
   // Now begin the integration of each component
   // Based on the delta theta, let's decide which integration will be used
-  bool small_w = (w_norm < 1.0 / 180 * M_PI / 2);
+  bool small_w = (w_norm < 1.0 / 180 * M_PI / 2); // 1/2 degree per second 근데 인제 radian을 겻들인.
   if (!small_w) {
 
     // first order rotation integration with constant omega

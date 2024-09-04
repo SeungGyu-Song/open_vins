@@ -74,7 +74,7 @@ bool InertialInitializer::initialize(double &timestamp, Eigen::MatrixXd &covaria
                                      std::shared_ptr<ov_type::IMU> t_imu, bool wait_for_jerk) {
 
   // Get the newest and oldest timestamps we will try to initialize between!
-  // 한 개의 feature의 여러 observations에 대해
+  // 한 개의 feature의 여러 observations에 대해 overall 최근 시간을 구함.
   double newest_cam_time = -1;
   for (auto const &feat : _db->get_internal_data()) {
     for (auto const &camtimepair : feat.second->timestamps) {

@@ -220,7 +220,7 @@ void StateHelper::set_initial_covariance(std::shared_ptr<State> state, const Eig
     }
     i_index += order[i]->size();
   }
-  state->_Cov = state->_Cov.selfadjointView<Eigen::Upper>();
+  state->_Cov = state->_Cov.selfadjointView<Eigen::Upper>(); // 왜 upper triangular 부분만 가져오는 거지?
 }
 
 Eigen::MatrixXd StateHelper::get_marginal_covariance(std::shared_ptr<State> state,

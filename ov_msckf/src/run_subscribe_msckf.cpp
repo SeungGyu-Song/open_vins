@@ -81,10 +81,10 @@ int main(int argc, char **argv) {
 
   // Create our VIO system
   VioManagerOptions params;
-  params.print_and_load(parser);
+  params.print_and_load(parser); //yaml파일로부터 다 받아오는 거
   params.use_multi_threading_subs = true;
   sys = std::make_shared<VioManager>(params);
-#if ROS_AVAILABLE == 1
+#if ROS_AVAILABLE == 1 // 얘는 어디서 오는 거지?
   viz = std::make_shared<ROS1Visualizer>(nh, sys);
   viz->setup_subscribers(parser);
 #elif ROS_AVAILABLE == 2

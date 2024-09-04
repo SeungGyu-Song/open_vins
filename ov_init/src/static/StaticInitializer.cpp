@@ -53,6 +53,7 @@ bool StaticInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarianc
   }
 
   // First lets collect a window of IMU readings from the newest measurement to the oldest
+  //2to1 -> 1to0
   std::vector<ImuData> window_1to0, window_2to1;
   for (const ImuData &data : *imu_data) {
     if (data.timestamp > newesttime - 0.5 * params.init_window_time && data.timestamp <= newesttime - 0.0 * params.init_window_time) {
@@ -119,16 +120,16 @@ bool StaticInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarianc
   }
 
   // Get rotation with z axis aligned with -g (z_in_G=0,0,1)
-  Eigen::Vector3d z_axis = a_avg_2to1 / a_avg_2to1.norm();
+  Eigen::Vector3d z_axis = a_avg_2to1 / a_avg_2to1.norm(); // 처음에 가만히 있을 때를 기준으로 gravity 및 z축을 정하나보다.
   Eigen::Matrix3d Ro;
   InitializerHelper::gram_schmidt(z_axis, Ro);
-  Eigen::Vector4d q_GtoI = rot_2_quat(Ro);
+  Eigen::Vector4d q_GtoI = rot_2_quat(Ro);  // frame 순서 유의하기.
 
   // Set our biases equal to our noise (subtract our gravity from accelerometer bias)
   Eigen::Vector3d gravity_inG;
   gravity_inG << 0.0, 0.0, params.gravity_mag;
   Eigen::Vector3d bg = w_avg_2to1;
-  Eigen::Vector3d ba = a_avg_2to1 - quat_2_Rot(q_GtoI) * gravity_inG;
+  Eigen::Vector3d ba = a_avg_2to1 - quat_2_Rot(q_GtoI) * gravity_inG; // ? 이건 왜 이러는 거지?
 
   // Set our state variables
   timestamp = window_2to1.at(window_2to1.size() - 1).timestamp;
@@ -143,7 +144,7 @@ bool StaticInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarianc
   // Create base covariance and its covariance ordering
   order.clear();
   order.push_back(t_imu);
-  covariance = std::pow(0.02, 2) * Eigen::MatrixXd::Identity(t_imu->size(), t_imu->size());
+  covariance = std::pow(0.02, 2) * Eigen::MatrixXd::Identity(t_imu->size(), t_imu->size()); // 0.02^2는 maginc number인가?
   covariance.block(0, 0, 3, 3) = std::pow(0.02, 2) * Eigen::Matrix3d::Identity(); // q
   covariance.block(3, 3, 3, 3) = std::pow(0.05, 2) * Eigen::Matrix3d::Identity(); // p
   covariance.block(6, 6, 3, 3) = std::pow(0.01, 2) * Eigen::Matrix3d::Identity(); // v (static)

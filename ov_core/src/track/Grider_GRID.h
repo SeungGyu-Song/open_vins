@@ -104,6 +104,7 @@ public:
     assert(size_y > 0);
 
     // Parallelize our 2d grid extraction!!
+    // 아래를 parallel_for_로 돌리는데 thread-safe한 건가?
     std::vector<std::vector<cv::KeyPoint>> collection(valid_locs.size());
     parallel_for_(cv::Range(0, (int)valid_locs.size()), LambdaBody([&](const cv::Range &range) {
                     for (int r = range.start; r < range.end; r++) {
@@ -114,7 +115,7 @@ public:
                       int y = grid.second * size_y;
 
                       // Skip if we are out of bounds
-                      if (x + size_x > img.cols || y + size_y > img.rows)
+                      if (x + size_x > img.cols || y + size_y > img.rows) // 이렇게 해서 전에 feature가 작게 뽑혀서 이번 grid가 간격이 넓어지면 범위 밖에서 뽑히지 않게 방지하는 코드.
                         continue;
 
                       // Calculate where we should be extracting from
@@ -151,6 +152,7 @@ public:
                   }));
 
     // Combine all the collections into our single vector
+    // 근데 위에서 grid가 뒤죽박죽으로 collection에 저장될 수도 있는 거 아닌가? 병렬로 돌아가니까.
     for (size_t r = 0; r < collection.size(); r++) {
       pts.insert(pts.end(), collection.at(r).begin(), collection.at(r).end());
     }

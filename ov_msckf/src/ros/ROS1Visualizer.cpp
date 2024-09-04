@@ -156,7 +156,7 @@ void ROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> pars
   // Create imu subscriber (handle legacy ros param info)
   std::string topic_imu;
   _nh->param<std::string>("topic_imu", topic_imu, "/imu0"); // 이거 근데 왜 param으로 받아오지?[] launch file에 업는데
-  parser->parse_external("relative_config_imu", "imu0", "rostopic", topic_imu);
+  parser->parse_external("relative_config_imu", "imu0", "rostopic", topic_imu); 
   sub_imu = _nh->subscribe(topic_imu, 1000, &ROS1Visualizer::callback_inertial, this);
   PRINT_INFO("subscribing to IMU: %s\n", topic_imu.c_str());
 
@@ -308,7 +308,7 @@ void ROS1Visualizer::visualize_odometry(double timestamp) {
     odomIinM.twist.twist.angular.z = state_plus(12); // we do not estimate this...
 
     // Finally set the covariance in the message (in the order position then orientation as per ros convention)
-    // 이거 식의 근거가 어떻게 되지?[ ] 
+    // 이거 식의 근거가 어떻게 되지?[ ] 이러면 다 거의 다 0이 되지않나?
     Eigen::Matrix<double, 12, 12> Phi = Eigen::Matrix<double, 12, 12>::Zero();
     Phi.block(0, 3, 3, 3).setIdentity();
     Phi.block(3, 0, 3, 3).setIdentity();
@@ -469,12 +469,14 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
     // We should wait till we have one of each camera to ensure we propagate in the correct order
     auto params = _app->get_params();
     size_t num_unique_cameras = (params.state_options.num_cameras == 2) ? 1 : params.state_options.num_cameras;
-    if (unique_cam_ids.size() == num_unique_cameras) { // 이게 이미지가 하나라도 들어왔으면 update를 해주는 식 같은데
+    if (unique_cam_ids.size() == num_unique_cameras) { // 이게 이미지가 동시에 들어왔으면 update를 해주는 식 같은데
 
       // Loop through our queue and see if we are able to process any of our camera measurements
       // We are able to process if we have at least one IMU measurement greater than the camera time
+      // image가 여러 개 있을 수 있나?
       double timestamp_imu_inC = message.timestamp - _app->get_state()->_calib_dt_CAMtoIMU->value()(0);
       while (!camera_queue.empty() && camera_queue.at(0).timestamp < timestamp_imu_inC) {
+
         auto rT0_1 = boost::posix_time::microsec_clock::local_time();
         double update_dt = 100.0 * (timestamp_imu_inC - camera_queue.at(0).timestamp);
         _app->feed_measurement_camera(camera_queue.at(0));
@@ -493,7 +495,7 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
   if (!_app->get_params().use_multi_threading_subs) {
     thread.join();
   } else {
-    thread.detach();
+    thread.detach(); // join이었으면 함수 action을 다 하고 메모리가 반납이 되는데, detach는 그냥 호출되면 바로 memory 반납?
   }
 }
 
@@ -541,7 +543,7 @@ void ROS1Visualizer::callback_stereo(const sensor_msgs::ImageConstPtr &msg0, con
 
   // Check if we should drop this image
   double timestamp = msg0->header.stamp.toSec();
-  double time_delta = 1.0 / _app->get_params().track_frequency;
+  double time_delta = 1.0 / _app->get_params().track_frequency; // img hz보다 1 높게.
   if (camera_last_timestamp.find(cam_id0) != camera_last_timestamp.end() && timestamp < camera_last_timestamp.at(cam_id0) + time_delta) {
     return;
   }
@@ -633,6 +635,28 @@ void ROS1Visualizer::publish_state() {
   posetemp.header = poseIinM.header;
   posetemp.pose = poseIinM.pose.pose;
   poses_imu.push_back(posetemp);
+  std::cout <<"-----------------------" << std::endl;
+
+  double max_cov_eigenvalue = 0;
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(covariance_posori);
+  if (eigensolver.info() == Eigen::Success) {
+    Eigen::VectorXd eigenvalues = eigensolver.eigenvalues();
+    max_cov_eigenvalue = eigenvalues.maxCoeff();
+  }
+
+  ofstream foutC("/home/snggu/ov_ws/src/open_vins/result/go1/bias.csv", ios::app);
+        foutC.setf(ios::fixed, ios::floatfield);
+        foutC.precision(0);
+        foutC << poseIinM.header.stamp.toSec() * 1e9 << ",";
+        foutC.precision(5);
+        foutC << state->_imu->bias_g().transpose() << ","
+              << state->_imu->bias_g().norm() << ","
+              << state->_imu->bias_a().transpose() << ","
+              << state->_imu->bias_a().norm() << ","
+              << max_cov_eigenvalue << ","
+              << endl;
+        foutC.close();
+
 
   // Create our path (imu)
   // NOTE: We downsample the number of poses as needed to prevent rviz crashes
