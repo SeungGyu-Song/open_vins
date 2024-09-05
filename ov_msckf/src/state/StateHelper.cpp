@@ -44,6 +44,7 @@ void StateHelper::EKFPropagation(std::shared_ptr<State> state, const std::vector
   }
 
   // Loop through our Phi order and ensure that they are continuous in memory
+  // id 는 covariance matrix에서의 시작 위치를 의미한다.
   int size_order_NEW = order_NEW.at(0)->size();
   for (size_t i = 0; i < order_NEW.size() - 1; i++) {
     if (order_NEW.at(i)->id() + order_NEW.at(i)->size() != order_NEW.at(i + 1)->id()) {

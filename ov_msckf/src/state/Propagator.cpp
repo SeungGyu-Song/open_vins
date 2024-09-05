@@ -496,11 +496,12 @@ void Propagator::predict_mean_discrete(std::shared_ptr<State> state, double dt, 
   // Orientation: Equation (101) and (103) and of Trawny indirect TR
   Eigen::Matrix<double, 4, 4> bigO;
   if (w_norm > 1e-12) {
-    bigO = cos(0.5 * w_norm * dt) * I_4x4 + 1 / w_norm * sin(0.5 * w_norm * dt) * Omega(w_hat);
+    bigO = cos(0.5 * w_norm * dt) * I_4x4 + 1 / w_norm * sin(0.5 * w_norm * dt) * Omega(w_hat); // 이건 뭐지? // 여기에 걸리는 일은 별로 안 일어나는 듯.
+    std::cout << CYAN "big gyro value! " << RESET << std::endl;
   } else {
     bigO = I_4x4 + 0.5 * dt * Omega(w_hat);
   }
-  new_q = quatnorm(bigO * state->_imu->quat());
+  new_q = quatnorm(bigO * state->_imu->quat()); 
   // new_q = rot_2_quat(exp_so3(-w_hat*dt)*R_Gtoi);
 
   // Velocity: just the acceleration in the local frame, minus global gravity

@@ -177,6 +177,7 @@ inline Eigen::Matrix<double, 3, 3> quat_2_Rot(const Eigen::Matrix<double, 4, 1> 
  * @param[in] p Second JPL quaternion
  * @return 4x1 resulting q*p quaternion
  */
+// 이게 식 8번
 inline Eigen::Matrix<double, 4, 1> quat_multiply(const Eigen::Matrix<double, 4, 1> &q, const Eigen::Matrix<double, 4, 1> &p) {
   Eigen::Matrix<double, 4, 1> q_t;
   Eigen::Matrix<double, 4, 4> Qm;
