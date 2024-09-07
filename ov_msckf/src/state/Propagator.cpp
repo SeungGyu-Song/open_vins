@@ -438,7 +438,7 @@ void Propagator::predict_and_compute(std::shared_ptr<State> state, const ov_core
   if (state->_options.integration_method == StateOptions::IntegrationMethod::RK4 ||
       state->_options.integration_method == StateOptions::IntegrationMethod::ANALYTICAL) {
     compute_Xi_sum(state, dt, w_hat_avg, a_hat_avg, Xi_sum);
-  }
+  } 
 
   // Compute the new state mean value
   Eigen::Vector4d new_q;

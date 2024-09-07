@@ -151,7 +151,7 @@ public:
   /// Map between imaging times and clone poses (q_GtoIi, p_IiinG)
   std::map<double, std::shared_ptr<ov_type::PoseJPL>> _clones_IMU;
 
-  /// Our current set of SLAM features (3d positions)
+  /// Our current set of SLAM features (3d positions) map의 key는 뭐로 mapping 되어 있는 거지?
   std::unordered_map<size_t, std::shared_ptr<ov_type::Landmark>> _features_SLAM;
 
   /// Time offset base IMU to camera (t_imu = t_cam + t_off)

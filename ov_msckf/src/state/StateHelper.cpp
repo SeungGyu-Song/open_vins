@@ -47,7 +47,7 @@ void StateHelper::EKFPropagation(std::shared_ptr<State> state, const std::vector
   // id 는 covariance matrix에서의 시작 위치를 의미한다.
   int size_order_NEW = order_NEW.at(0)->size();
   for (size_t i = 0; i < order_NEW.size() - 1; i++) {
-    if (order_NEW.at(i)->id() + order_NEW.at(i)->size() != order_NEW.at(i + 1)->id()) {
+    if (order_NEW.at(i)->id() + order_NEW.at(i)->size() != order_NEW.at(i + 1)->id()) { // 이게 맞아야 covariance에서 행렬이 맞음.
       PRINT_ERROR(RED "StateHelper::EKFPropagation() - Called with non-contiguous state elements!\n" RESET);
       PRINT_ERROR(
           RED "StateHelper::EKFPropagation() - This code only support a state transition which is in the same order as the state\n" RESET);
@@ -81,6 +81,7 @@ void StateHelper::EKFPropagation(std::shared_ptr<State> state, const std::vector
   Eigen::MatrixXd Cov_PhiT = Eigen::MatrixXd::Zero(state->_Cov.rows(), Phi.rows());
   for (size_t i = 0; i < order_OLD.size(); i++) {
     std::shared_ptr<Type> var = order_OLD.at(i);
+    // Copilot : noalias()는 Eigen에게 결과가 Cov_PhiT와 겹치지 않음을 알려 최적화를 돕습니다.
     Cov_PhiT.noalias() +=
         state->_Cov.block(0, var->id(), state->_Cov.rows(), var->size()) * Phi.block(0, Phi_id[i], Phi.rows(), var->size()).transpose();
   }

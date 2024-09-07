@@ -367,7 +367,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   // Now, lets get all features that should be used for an update that are lost in the newest frame
   // We explicitly request features that have not been deleted (used) in another update step
   std::vector<std::shared_ptr<Feature>> feats_lost, feats_marg, feats_slam;
-  feats_lost = trackFEATS->get_feature_database()->features_not_containing_newer(state->_timestamp, false, true);
+  feats_lost = trackFEATS->get_feature_database()->features_not_containing_newer(state->_timestamp, false, true); // state의 timestamp보다 최신인 게 없는 feature 모음.
 
   // Don't need to get the oldest features until we reach our max number of clones
   if ((int)state->_clones_IMU.size() > state->_options.max_clone_size || (int)state->_clones_IMU.size() > 5) {
@@ -433,18 +433,19 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   int curr_aruco_tags = 0;
   auto it0 = state->_features_SLAM.begin();
   while (it0 != state->_features_SLAM.end()) {
-    if ((int)(*it0).second->_featid <= 4 * state->_options.max_aruco_features)
+    if ((int)(*it0).second->_featid <= 4 * state->_options.max_aruco_features) //4가 뭐지? 그냥 aruco feature를 발견하고 너무 멀리 떨어져있지 않은 feature를 걸러내려고 그러는 건가?
       curr_aruco_tags++;
     it0++;
   }
 
   // Append a new SLAM feature if we have the room to do so
   // Also check that we have waited our delay amount (normally prevents bad first set of slam points)
+  // startup_time 은 initialize를 진행한 시간이다., max_slam은  state에 저장된 slam feature의 최대 개수이다.
   if (state->_options.max_slam_features > 0 && message.timestamp - startup_time >= params.dt_slam_delay &&
       (int)state->_features_SLAM.size() < state->_options.max_slam_features + curr_aruco_tags) {
     // Get the total amount to add, then the max amount that we can add given our marginalize feature array
     int amount_to_add = (state->_options.max_slam_features + curr_aruco_tags) - (int)state->_features_SLAM.size();
-    int valid_amount = (amount_to_add > (int)feats_maxtracks.size()) ? (int)feats_maxtracks.size() : amount_to_add;
+    int valid_amount = (amount_to_add > (int)feats_maxtracks.size()) ? (int)feats_maxtracks.size() : amount_to_add; // 더 적은 거 선택.
     // If we have at least 1 that we can add, lets add it!
     // Note: we remove them from the feat_marg array since we don't want to reuse information...
     if (valid_amount > 0) {
@@ -466,11 +467,11 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     }
     std::shared_ptr<Feature> feat2 = trackFEATS->get_feature_database()->get_feature(landmark.second->_featid);
     if (feat2 != nullptr)
-      feats_slam.push_back(feat2);
+      feats_slam.push_back(feat2);// 뽑은 Feature 중에서 state의 landmark랑 같은 애들을 feats_slam에 넣는다.
     assert(landmark.second->_unique_camera_id != -1);
     bool current_unique_cam =
         std::find(message.sensor_ids.begin(), message.sensor_ids.end(), landmark.second->_unique_camera_id) != message.sensor_ids.end();
-    if (feat2 == nullptr && current_unique_cam)
+    if (feat2 == nullptr && current_unique_cam) // feats2 == nullptr => state에 없으니까 새로운 feature 아닌가?
       landmark.second->should_marg = true;
     if (landmark.second->update_fail_count > 1)
       landmark.second->should_marg = true;
