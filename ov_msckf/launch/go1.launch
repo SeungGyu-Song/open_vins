@@ -19,8 +19,9 @@
     <!-- saving trajectory path and timing information -->
     <arg name="dosave"      default="false" />
     <arg name="dotime"      default="false" />
-    <arg name="path_est"    default="/tmp/traj_estimate.txt" />
-    <arg name="path_time"   default="/tmp/traj_timing.txt" />
+    <arg name="path_est"    default="$(find ov_msckf)/../config/$(arg config)/traj_estimate.txt" />
+    <arg name="path_time"   default="$(find ov_msckf)/../config/$(arg config)/traj_timing.txt" />
+
 
     <!-- if we should viz the groundtruth -->
     <arg name="dolivetraj"  default="false" />

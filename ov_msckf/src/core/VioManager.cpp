@@ -619,6 +619,10 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for SLAM update (%d feats)\n" RESET, time_slam_update, (int)state->_features_SLAM.size());
     PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for SLAM delayed init (%d feats)\n" RESET, time_slam_delay, (int)feats_slam_DELAYED.size());
   }
+  // for(auto observation : state->_features_SLAM) {
+  //   if ()
+  // }
+  std::cout << "Num Landmarks : " << state->_features_SLAM.size() << std::endl;
   PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for re-tri & marg (%d clones in state)\n" RESET, time_marg, (int)state->_clones_IMU.size());
 
   std::stringstream ss;
