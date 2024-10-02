@@ -305,7 +305,7 @@ void StateHelper::marginalize(std::shared_ptr<State> state, std::shared_ptr<Type
   Cov_new.block(0, marg_id, marg_id, x2_size) = state->_Cov.block(0, marg_id + marg_size, marg_id, x2_size);
 
   // P_(x_2,x_1)
-  Cov_new.block(marg_id, 0, x2_size, marg_id) = Cov_new.block(0, marg_id, marg_id, x2_size).transpose();
+  Cov_new.block(marg_id, 0, x2_size, marg_id) = Cov_new.block(0, marg_id, marg_id, x2_size).transpose(); // 이거 이게 맞나? 위에랑 똑같이 하고 transpose아닌가?
 
   // P(x_2,x_2)
   Cov_new.block(marg_id, marg_id, x2_size, x2_size) = state->_Cov.block(marg_id + marg_size, marg_id + marg_size, x2_size, x2_size);
@@ -619,7 +619,7 @@ void StateHelper::augment_clone(std::shared_ptr<State> state, Eigen::Matrix<doub
 
 void StateHelper::marginalize_old_clone(std::shared_ptr<State> state) {
   if ((int)state->_clones_IMU.size() > state->_options.max_clone_size) {
-    double marginal_time = state->margtimestep();
+    double marginal_time = state->margtimestep(); // state에서 제일 오래된 시간.
     // Lock the mutex to avoid deleting any elements from _clones_IMU while accessing it from other threads
     std::lock_guard<std::mutex> lock(state->_mutex_state);
     assert(marginal_time != INFINITY);

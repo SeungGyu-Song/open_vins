@@ -121,7 +121,7 @@ bool VioManager::try_to_initialize(const ov_core::CameraData &message) {
       // Also increase the number of features to the desired amount during estimation
       // NOTE: we will split the total number of features over all cameras uniformly
       trackFEATS->get_feature_database()->cleanup_measurements(state->_timestamp);
-      trackFEATS->set_num_features(std::floor((double)params.num_pts / (double)params.state_options.num_cameras));
+      trackFEATS->set_num_features(std::floor((double)params.num_pts / (double)params.state_options.num_cameras)); // 한 카메라 당 뽑아낼 feature 수
       if (trackARUCO != nullptr) {
         trackARUCO->get_feature_database()->cleanup_measurements(state->_timestamp);
       }
@@ -149,7 +149,7 @@ bool VioManager::try_to_initialize(const ov_core::CameraData &message) {
       std::vector<double> camera_timestamps_to_init;
       for (size_t i = 0; i < camera_queue_init.size(); i++) {
         if (camera_queue_init.at(i) > timestamp) {
-          camera_timestamps_to_init.push_back(camera_queue_init.at(i));
+          camera_timestamps_to_init.push_back(camera_queue_init.at(i)); // initialization 이후의 camera data만 남김.
         }
       }
 
