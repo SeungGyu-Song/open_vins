@@ -64,7 +64,7 @@ public:
    * @return Vector of measurements (if we could compute them)
    */
   static std::vector<ov_core::ImuData> select_imu_readings(const std::vector<ov_core::ImuData> &imu_data_tmp, double time0, double time1) {
-    // Our vector imu readings
+    // Our vector imu readings // time0 : oldest, time1 : newest
     std::vector<ov_core::ImuData> prop_data;
 
     // Ensure we have some measurements in the first place!
@@ -113,7 +113,7 @@ public:
     }
 
     // Loop through and ensure we do not have an zero dt values
-    // This would cause the noise covariance to be Infinity
+    // This would cause the noise covariance to be Infinity //? why?
     for (size_t i = 0; i < prop_data.size() - 1; i++) {
       if (std::abs(prop_data.at(i + 1).timestamp - prop_data.at(i).timestamp) < 1e-12) {
         prop_data.erase(prop_data.begin() + i);
@@ -139,13 +139,14 @@ public:
 
     // This will find an orthogonal vector to gravity which is our local z-axis
     // We need to ensure we normalize after each one such that we obtain unit vectors
+    // 이거 방식이 좀 이상한 거 같은데
     Eigen::Vector3d z_axis = gravity_inI / gravity_inI.norm();
     Eigen::Vector3d x_axis, y_axis;
     Eigen::Vector3d e_1(1.0, 0.0, 0.0);
     Eigen::Vector3d e_2(0.0, 1.0, 0.0);
     double inner1 = e_1.dot(z_axis) / z_axis.norm();
     double inner2 = e_2.dot(z_axis) / z_axis.norm();
-    if (fabs(inner1) < fabs(inner2)) {
+    if (fabs(inner1) < fabs(inner2)) { 
       x_axis = z_axis.cross(e_1);
       x_axis = x_axis / x_axis.norm();
       y_axis = z_axis.cross(x_axis);

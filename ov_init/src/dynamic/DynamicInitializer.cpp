@@ -97,7 +97,7 @@ bool DynamicInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarian
   // ======================================================
 
   // Settings
-  const int min_num_meas_to_optimize = (int)params.init_window_time;
+  const int min_num_meas_to_optimize = (int)params.init_window_time; /// 고칠 여지가 있음.
   const int min_valid_features = 8;
 
   // Validation information for features we can use
@@ -111,11 +111,11 @@ bool DynamicInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarian
   std::map<size_t, bool> map_camera_ids;
   double pose_dt_avg = params.init_window_time / (double)(params.init_dyn_num_pose + 1);
   for (auto const &feat : features) {
-
+    // 한 feature에 대해서. 
     // Loop through each timestamp and make sure it is a valid pose
     std::vector<double> times;
     std::map<size_t, bool> camids;
-    for (auto const &camtime : feat.second->timestamps) {
+    for (auto const &camtime : feat.second->timestamps) { // 왼 오에 각각에 대해 찍힌 시각
       for (double time : camtime.second) {
         double time_dt = INFINITY;
         for (auto const &tmp : map_camera_times) {
@@ -126,6 +126,7 @@ bool DynamicInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarian
         }
         // either this pose is a new one at the desired frequency
         // or it is a timestamp that we already have, thus can use for free
+        //그럼 오히려 더 빨리 들어온 애들은 그냥 저장을 안 하고 넘어가는 거네
         if (time_dt >= pose_dt_avg || time_dt == 0.0) {
           times.push_back(time);
           camids[camtime.first] = true;
@@ -135,14 +136,14 @@ bool DynamicInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarian
 
     // This isn't a feature we should use if there are not enough measurements
     map_features_num_meas[feat.first] = (int)times.size();
-    if (map_features_num_meas[feat.first] < min_num_meas_to_optimize)
+    if (map_features_num_meas[feat.first] < min_num_meas_to_optimize) //2초면 두 개밖에 없어도 돼?
       continue;
 
     // If we have enough measurements we should append this feature!
     for (auto const &tmp : times) {
       map_camera_times[tmp] = true;
       oldest_camera_time = std::min(oldest_camera_time, tmp);
-      num_measurements += 2;
+      num_measurements += 2; // ?
     }
     for (auto const &tmp : camids) {
       map_camera_ids[tmp.first] = true;
@@ -170,6 +171,7 @@ bool DynamicInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarian
   Eigen::Vector3d accelerometer_bias = params.init_dyn_bias_a;
 
   // Check that we have some angular velocity / orientation change
+  // midpoint 
   double accel_inI_norm = 0.0;
   double theta_inI_norm = 0.0;
   double time0_in_imu = oldest_camera_time + params.calib_camimu_dt;
@@ -182,10 +184,11 @@ bool DynamicInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarian
     double dt = imu1.timestamp - imu0.timestamp;
     Eigen::Vector3d wm = 0.5 * (imu0.wm + imu1.wm) - gyroscope_bias;
     Eigen::Vector3d am = 0.5 * (imu0.am + imu1.am) - accelerometer_bias;
-    theta_inI_norm += (-wm * dt).norm();
+    theta_inI_norm += (-wm * dt).norm(); // ? 뭐야 이거 왜 -를 붙이지?
     accel_inI_norm += am.norm();
   }
   accel_inI_norm /= (double)(readings.size() - 1);
+  //충분히 회전을 해야함.
   if (180.0 / M_PI * theta_inI_norm < params.init_dyn_min_deg) {
     PRINT_WARNING(YELLOW "[init-d]: gyroscope only %.2f degree change (%.2f thresh)\n" RESET, 180.0 / M_PI * theta_inI_norm,
                   params.init_dyn_min_deg);
