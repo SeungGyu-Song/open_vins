@@ -39,6 +39,7 @@ bool StaticInitializer::initialize(double &timestamp, Eigen::MatrixXd &covarianc
 
   // Return if we don't have any measurements
   if (imu_data->size() < 2) {
+    std::cout << GREEN << "[init-s]: unable to select window of IMU readings, not enough readings" << RESET << std::endl;
     return false;
   }
 

@@ -130,6 +130,7 @@ bool InertialInitializer::initialize(double &timestamp, Eigen::MatrixXd &covaria
   // CASE2: if both disparities are below the threshold, then the platform has been stationary during both periods
   bool has_jerk = (!disparity_detected_moving_1to0 && disparity_detected_moving_2to1);
   bool is_still = (!disparity_detected_moving_1to0 && !disparity_detected_moving_2to1);
+  std::cout << "has_jerk  " << has_jerk << " is_still  " << is_still << std::endl;
   if (((has_jerk && wait_for_jerk) || (is_still && !wait_for_jerk)) && params.init_imu_thresh > 0.0) {
     PRINT_DEBUG(GREEN "[init]: USING STATIC INITIALIZER METHOD!\n" RESET);
     return init_static->initialize(timestamp, covariance, order, t_imu, wait_for_jerk);

@@ -114,6 +114,7 @@ public:
   /// Callback for synchronized stereo camera information
   void callback_stereo(const sensor_msgs::ImageConstPtr &msg0, const sensor_msgs::ImageConstPtr &msg1, int cam_id0, int cam_id1);
 
+  
 protected:
   /// Publish the current state
   void publish_state();
@@ -198,6 +199,9 @@ protected:
   // Files and if we should save total state
   bool save_total_state = false;
   std::ofstream of_state_est, of_state_std, of_state_gt;
+
+  //image comprsessed 
+  bool is_livox_imu;
 };
 
 } // namespace ov_msckf

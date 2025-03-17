@@ -619,7 +619,7 @@ void StateHelper::augment_clone(std::shared_ptr<State> state, Eigen::Matrix<doub
 
 void StateHelper::marginalize_old_clone(std::shared_ptr<State> state) {
   if ((int)state->_clones_IMU.size() > state->_options.max_clone_size) {
-    double marginal_time = state->margtimestep(); // state에서 제일 오래된 시간.
+    double marginal_time = state->margtimestep(); // state의 _imu_clones에서 제일 오래된 시간.
     // Lock the mutex to avoid deleting any elements from _clones_IMU while accessing it from other threads
     std::lock_guard<std::mutex> lock(state->_mutex_state);
     assert(marginal_time != INFINITY);

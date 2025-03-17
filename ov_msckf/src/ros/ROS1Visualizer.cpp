@@ -152,7 +152,7 @@ void ROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> pars
 
   // We need a valid parser
   assert(parser != nullptr);
-
+  _nh->param<bool>("livox_imu", is_livox_imu, false);
   // Create imu subscriber (handle legacy ros param info)
   std::string topic_imu;
   _nh->param<std::string>("topic_imu", topic_imu, "/imu0"); // 이거 근데 왜 param으로 받아오지?[] launch file에 업는데
@@ -169,17 +169,20 @@ void ROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> pars
     _nh->param<std::string>("topic_camera" + std::to_string(1), cam_topic1, "/cam" + std::to_string(1) + "/image_raw");
     parser->parse_external("relative_config_imucam", "cam" + std::to_string(0), "rostopic", cam_topic0); // 이게 어떻게 작동하는 건지 잘 모르겠당 
     parser->parse_external("relative_config_imucam", "cam" + std::to_string(1), "rostopic", cam_topic1);
+
     // Create sync filter (they have unique pointers internally, so we have to use move logic here...)
-    auto image_sub0 = std::make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*_nh, cam_topic0, 1);
-    auto image_sub1 = std::make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*_nh, cam_topic1, 1);
-    auto sync = std::make_shared<message_filters::Synchronizer<sync_pol>>(sync_pol(10), *image_sub0, *image_sub1);
-    sync->registerCallback(boost::bind(&ROS1Visualizer::callback_stereo, this, _1, _2, 0, 1));
-    // Append to our vector of subscribers
-    sync_cam.push_back(sync);
-    sync_subs_cam.push_back(image_sub0);
-    sync_subs_cam.push_back(image_sub1);
-    PRINT_INFO("subscribing to cam (stereo): %s\n", cam_topic0.c_str());
-    PRINT_INFO("subscribing to cam (stereo): %s\n", cam_topic1.c_str());
+      auto image_sub0 = std::make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*_nh, cam_topic0, 1);
+      auto image_sub1 = std::make_shared<message_filters::Subscriber<sensor_msgs::Image>>(*_nh, cam_topic1, 1);
+
+      auto sync = std::make_shared<message_filters::Synchronizer<sync_pol>>(sync_pol(10), *image_sub0, *image_sub1);
+      sync->registerCallback(boost::bind(&ROS1Visualizer::callback_stereo, this, _1, _2, 0, 1));
+      // Append to our vector of subscribers
+      sync_cam.push_back(sync);
+      sync_subs_cam.push_back(image_sub0);
+      sync_subs_cam.push_back(image_sub1);
+      PRINT_INFO("subscribing to cam (stereo): %s\n", cam_topic0.c_str());
+      PRINT_INFO("subscribing to cam (stereo): %s\n", cam_topic1.c_str());
+
   } else {
     // Now we should add any non-stereo callbacks here
     for (int i = 0; i < _app->get_params().state_options.num_cameras; i++) {
@@ -444,8 +447,16 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
   // convert into correct format
   ov_core::ImuData message;
   message.timestamp = msg->header.stamp.toSec();
+
+  Eigen::Matrix<double, 3 ,1> acc;
+  if(is_livox_imu)
+    acc << msg->linear_acceleration.x * 9.81, msg->linear_acceleration.y * 9.81, msg->linear_acceleration.z * 9.81;
+  else
+    acc << msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z;
+  
+  // std::cout << "acc: " << acc << std::endl;
   message.wm << msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z;
-  message.am << msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z;
+  message.am = acc;
 
   // send it to our VIO system
   _app->feed_measurement_imu(message);
@@ -500,6 +511,7 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
     thread.detach(); // join이었으면 함수 action을 다 하고 메모리가 반납이 되는데, detach는 그냥 호출되면 바로 memory 반납?
   }
 }
+
 
 void ROS1Visualizer::callback_monocular(const sensor_msgs::ImageConstPtr &msg0, int cam_id0) {
 
@@ -593,6 +605,8 @@ void ROS1Visualizer::callback_stereo(const sensor_msgs::ImageConstPtr &msg0, con
   camera_queue.push_back(message);
   std::sort(camera_queue.begin(), camera_queue.end());
 }
+
+
 
 void ROS1Visualizer::publish_state() {
 

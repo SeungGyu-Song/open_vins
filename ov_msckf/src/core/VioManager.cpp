@@ -512,7 +512,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     size_t asize = 0;
     size_t bsize = 0;
     for (const auto &pair : a->timestamps)
-      asize += pair.second.size();
+      asize += pair.second.size(); 
     for (const auto &pair : b->timestamps)
       bsize += pair.second.size();
     return asize < bsize;
