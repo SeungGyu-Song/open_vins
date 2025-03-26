@@ -51,6 +51,7 @@
 #include <boost/filesystem.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+
 namespace ov_core {
 class YamlParser;
 struct CameraData;
@@ -198,10 +199,11 @@ protected:
 
   // Files and if we should save total state
   bool save_total_state = false;
-  std::ofstream of_state_est, of_state_std, of_state_gt;
+  std::ofstream of_state_est, of_state_std, of_state_gt, of_bias;
 
   //image comprsessed 
   bool is_livox_imu;
+
 };
 
 } // namespace ov_msckf

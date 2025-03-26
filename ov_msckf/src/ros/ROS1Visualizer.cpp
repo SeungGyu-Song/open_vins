@@ -146,6 +146,21 @@ ROS1Visualizer::ROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_
     });
     thread.detach();
   }
+
+  if (nh->hasParam("save_path")) {
+
+    std::string save_dir, save_path_bias;
+    nh->param<std::string>("save_path", save_dir, "");
+    save_path_bias = save_dir + "/bias.csv";
+    if(boost::filesystem::exists(save_path_bias))
+      boost::filesystem::remove(save_path_bias);
+
+    boost::filesystem::create_directories(boost::filesystem::path(save_path_bias.c_str()).parent_path());
+    of_bias.open(save_path_bias.c_str(), std::ios::app);
+    std::cout << "SAVE_PATH_BIAS : " << save_path_bias << std::endl;
+    std::cout << "IS OPEN : " << of_bias.is_open() << std::endl;
+  }
+
 }
 
 void ROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> parser) {
@@ -500,6 +515,8 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
         PRINT_INFO(BLUE "[TIME]: %.4f seconds total (%.1f hz, %.2f ms behind)\n" RESET, time_total, 1.0 / time_total, update_dt);
       }
     }
+
+
     thread_update_running = false;
   });
 
@@ -660,18 +677,27 @@ void ROS1Visualizer::publish_state() {
     max_cov_eigenvalue = eigenvalues.maxCoeff();
   }
 
-  ofstream foutC("/home/snggu/ov_ws/src/open_vins/result/go1/bias.csv", ios::app);
-        foutC.setf(ios::fixed, ios::floatfield);
-        foutC.precision(0);
-        foutC << poseIinM.header.stamp.toSec() * 1e9 << ",";
-        foutC.precision(5);
-        foutC << state->_imu->bias_g().transpose() << ","
-              << state->_imu->bias_g().norm() << ","
-              << state->_imu->bias_a().transpose() << ","
-              << state->_imu->bias_a().norm() << ","
-              << max_cov_eigenvalue << ","
-              << endl;
-        foutC.close();
+  
+  if(of_bias.is_open()){
+    of_bias.setf(ios::fixed, ios::floatfield);
+    of_bias.precision(0);
+    of_bias << poseIinM.header.stamp.toSec() * 1e9 << ",";
+    of_bias.precision(5);
+    Eigen::Vector3d bg, ba;
+    bg = state->_imu->bias_g().transpose();
+    ba = state->_imu->bias_a().transpose();
+
+    // of_bias << state->_imu->bias_g().transpose() << ","
+    //       << state->_imu->bias_g().norm() << ","
+    //       << state->_imu->bias_a().transpose() << ","
+    //       << state->_imu->bias_a().norm() << ","
+    //       << max_cov_eigenvalue << ","
+    //       << endl;
+
+    of_bias << bg(0) << "," << bg(1) << "," << bg(2) << "," << bg.norm() << ","
+            << ba(0) << "," << ba(1) << "," << ba(2) << "," << ba.norm() << std::endl;
+  }
+        
 
 
   // Create our path (imu)
