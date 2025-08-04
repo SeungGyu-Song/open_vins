@@ -518,7 +518,7 @@ void TrackDescriptor::robust_match(const std::vector<cv::KeyPoint> &pts0, const 
     pts1_n.push_back(camera_calib.at(id1)->undistort_cv(pts1_rsc.at(i)));
   }
 
-  // Do RANSAC outlier rejection (note since we normalized the max pixel error is now in the normalized cords)
+  // Do RANSAC outlier rejection (note since we normalized the max pixel error is now in the normalized cords)e
   std::vector<uchar> mask_rsc;
   double max_focallength_img0 = std::max(camera_calib.at(id0)->get_K()(0, 0), camera_calib.at(id0)->get_K()(1, 1));
   double max_focallength_img1 = std::max(camera_calib.at(id1)->get_K()(0, 0), camera_calib.at(id1)->get_K()(1, 1));

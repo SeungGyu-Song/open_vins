@@ -59,6 +59,12 @@ int main(int argc, char **argv) {
   std::string verbosity = "INFO";
   parser->parse_config("verbosity", verbosity);
   ov_core::Printer::setPrintLevel(verbosity);
+  
+  // get External Pose address
+  std::string lio_pose_path;
+  nh->param<std::string>("lio_pose_path", lio_pose_path, "");
+
+
 
   // Create our VIO system
   VioManagerOptions params;
@@ -67,7 +73,7 @@ int main(int argc, char **argv) {
   // params.num_opencv_threads = 0; // uncomment if you want repeatability
   // params.use_multi_threading_pubs = 0; // uncomment if you want repeatability
   params.use_multi_threading_subs = false;
-  sys = std::make_shared<VioManager>(params);
+  sys = std::make_shared<VioManager>(params, lio_pose_path);
   viz = std::make_shared<ROS1Visualizer>(nh, sys);
 
   // Ensure we read in all parameters required

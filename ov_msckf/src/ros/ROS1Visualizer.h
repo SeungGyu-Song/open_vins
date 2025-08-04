@@ -108,6 +108,8 @@ public:
   /// Callback for inertial information
   void callback_inertial(const sensor_msgs::Imu::ConstPtr &msg);
 
+
+
   /// Callback for monocular cameras information
   void callback_monocular(const sensor_msgs::ImageConstPtr &msg0, int cam_id0);
 
@@ -157,6 +159,8 @@ protected:
   // For path viz
   unsigned int poses_seq_imu = 0;
   std::vector<geometry_msgs::PoseStamped> poses_imu;
+
+  
 
   // Groundtruth infomation
   ros::Publisher pub_pathgt, pub_posegt;

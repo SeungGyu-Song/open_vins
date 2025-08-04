@@ -52,6 +52,7 @@ ROS1Visualizer::ROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_
   pub_pathimu = nh->advertise<nav_msgs::Path>("pathimu", 2);
   PRINT_DEBUG("Publishing: %s\n", pub_pathimu.getTopic().c_str());
 
+
   // 3D points publishing
   pub_points_msckf = nh->advertise<sensor_msgs::PointCloud2>("points_msckf", 2);
   PRINT_DEBUG("Publishing: %s\n", pub_points_msckf.getTopic().c_str());
@@ -159,6 +160,7 @@ void ROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> pars
   parser->parse_external("relative_config_imu", "imu0", "rostopic", topic_imu); 
   sub_imu = _nh->subscribe(topic_imu, 1000, &ROS1Visualizer::callback_inertial, this);
   PRINT_INFO("subscribing to IMU: %s\n", topic_imu.c_str());
+
 
   // Logic for sync stereo subscriber
   // https://answers.ros.org/question/96346/subscribe-to-two-image_raws-with-one-function/?answer=96491#post-id-96491
@@ -513,6 +515,7 @@ void ROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
 }
 
 
+
 void ROS1Visualizer::callback_monocular(const sensor_msgs::ImageConstPtr &msg0, int cam_id0) {
 
   // Check if we should drop this image
@@ -643,10 +646,12 @@ void ROS1Visualizer::publish_state() {
   }
   pub_poseimu.publish(poseIinM);
 
+
   //=========================================================
   //=========================================================
 
   // Append to our pose vector
+
   geometry_msgs::PoseStamped posetemp;
   posetemp.header = poseIinM.header;
   posetemp.pose = poseIinM.pose.pose;
@@ -685,6 +690,11 @@ void ROS1Visualizer::publish_state() {
     arrIMU.poses.push_back(poses_imu.at(i));
   }
   pub_pathimu.publish(arrIMU);
+
+  
+
+
+
 
   // Move them forward in time
   poses_seq_imu++;
@@ -796,6 +806,8 @@ void ROS1Visualizer::publish_groundtruth() {
   // Create our path (imu)
   // NOTE: We downsample the number of poses as needed to prevent rviz crashes
   // NOTE: https://github.com/ros-visualization/rviz/issues/1107
+
+
   nav_msgs::Path arrIMU;
   arrIMU.header.stamp = ros::Time::now();
   arrIMU.header.seq = poses_seq_gt;

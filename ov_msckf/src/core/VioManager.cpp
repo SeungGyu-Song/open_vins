@@ -47,7 +47,7 @@ using namespace ov_core;
 using namespace ov_type;
 using namespace ov_msckf;
 
-VioManager::VioManager(VioManagerOptions &params_) : thread_init_running(false), thread_init_success(false) {
+VioManager::VioManager(VioManagerOptions &params_, const std::string& external_pose_path) : thread_init_running(false), thread_init_success(false), lio_pose_path_(external_pose_path) {
 
   // Nice startup message
   PRINT_DEBUG("=======================================\n");
@@ -161,7 +161,63 @@ VioManager::VioManager(VioManagerOptions &params_) : thread_init_running(false),
                                                         propagator, params.gravity_mag, params.zupt_max_velocity,
                                                         params.zupt_noise_multiplier, params.zupt_max_disparity);
   }
+
+
+
+  
+
+  if(this->params.do_external_pose){
+    std::string fetch_path = lio_pose_path_ + "/pose.txt";
+      std::ifstream fpose(fetch_path);
+      // if(! fpose.is_open())
+      //     return false;
+
+      std::string line;
+      while(std::getline(fpose, line)){
+          if(line.empty()) continue;
+          std::istringstream ss(line);
+
+          
+          double time, tx, ty, tz, qx, qy, qz, qw;
+          ss>> time, tx, ty, tz, qx, qy, qz, qw;
+
+          Eigen::Vector3d pos(tx, ty, tz); 
+          Eigen::Quaterniond quat(qw, qx, qy, qz);
+
+          // m_pose[time].insert(std::make_pair(pos, quat));
+          std::pair<Eigen::Vector3d, Eigen::Quaterniond> pair_pose = std::make_pair(pos, quat);
+          m_pose_[time] = pair_pose;
+      }
+  }
+  if(this->params.do_external_bias){
+    std::string fetch_path = lio_pose_path_ + "/_bias.csv";
+    std::ifstream fbias(fetch_path);
+    // if(!fbias.is_open())
+    //     return false;
+
+    std::string line;
+    while(std::getline(fbias, line)){
+        if(line.empty()) continue;
+        std::istringstream ss(line);
+        std::string token;
+        std::vector<double> vals;
+
+        while (std::getline(ss, token, ',')) {
+          vals.push_back(std::stod(token));
+        }
+        if (vals.size() < 7) continue;
+
+        double time = vals[0];
+        Eigen::Vector3d bg(vals[1], vals[2], vals[3]);
+        Eigen::Vector3d ba(vals[4], vals[5], vals[6]);
+
+        // m_bias[time].insert(std::make_pair(bg, ba));
+        std::pair<Eigen::Vector3d, Eigen::Vector3d> pair_bias = std::make_pair(bg, ba);
+        m_bias_[time] = pair_bias;
+    }
+  }
 }
+
 
 void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
 

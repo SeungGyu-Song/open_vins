@@ -79,11 +79,14 @@ int main(int argc, char **argv) {
   parser->parse_config("verbosity", verbosity);
   ov_core::Printer::setPrintLevel(verbosity);
 
+  //get External Pose address
+  std::string external_pose_path;
+  nh->param<std::string>("lio_pose_path", external_pose_path, "");
   // Create our VIO system
   VioManagerOptions params;
   params.print_and_load(parser); //yaml파일로부터 다 받아오는 거
   params.use_multi_threading_subs = true;
-  sys = std::make_shared<VioManager>(params);
+  sys = std::make_shared<VioManager>(params, external_pose_path);
 #if ROS_AVAILABLE == 1 // 얘는 어디서 오는 거지?
   viz = std::make_shared<ROS1Visualizer>(nh, sys);
   viz->setup_subscribers(parser);

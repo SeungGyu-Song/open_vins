@@ -114,6 +114,7 @@ void UpdaterMSCKF::update(std::shared_ptr<State> state, std::vector<std::shared_
     clones_cam.insert({clone_calib.first, clones_cami});
   }
 
+  // 이미 triangulation 된 애들은 없나? dd
   // 3. Try to triangulate all MSCKF or new SLAM features that have measurements
   auto it1 = feature_vec.begin();
   while (it1 != feature_vec.end()) {

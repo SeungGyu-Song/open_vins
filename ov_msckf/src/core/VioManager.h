@@ -27,6 +27,7 @@
 #include <atomic>
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include <sstream>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -66,7 +67,7 @@ public:
    * @brief Default constructor, will load all configuration variables
    * @param params_ Parameters loaded from either ROS or CMDLINE
    */
-  VioManager(VioManagerOptions &params_);
+  VioManager(VioManagerOptions &params_, const std::string& external_pose_path="");
 
   /**
    * @brief Feed function for inertial data
@@ -136,6 +137,9 @@ public:
     feat_tracks_uvd = active_tracks_uvd;
   }
 
+  void setExtgernalPose(const std::string& path){
+    lio_pose_path_ = path;
+  }
 protected:
   /**
    * @brief Given a new set of camera images, this will track them.
@@ -241,6 +245,11 @@ protected:
   std::map<size_t, Eigen::Matrix3d> active_feat_linsys_A;
   std::map<size_t, Eigen::Vector3d> active_feat_linsys_b;
   std::map<size_t, int> active_feat_linsys_count;
+
+  std::string lio_pose_path_;
+  std::map<size_t, std::pair<Eigen::Vector3d, Eigen::Quaterniond>> m_pose_;
+  std::map<size_t, std::pair<Eigen::Vector3d, Eigen::Vector3d>> m_bias_;
+
 };
 
 } // namespace ov_msckf
